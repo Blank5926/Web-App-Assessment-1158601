@@ -34,5 +34,6 @@ def currentjobs():
     jobList = connection.fetchall()
     return render_template("currentjoblist.html", job_list = jobList)    
 
-
+if __name__ == '__main__':
+    app.run()
 
