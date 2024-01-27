@@ -30,7 +30,7 @@ def home():
 @app.route("/currentjobs")
 def currentjobs():
     connection = getCursor()
-    connection.execute("SELECT job_id,customer,job_date FROM job where completed=0;")
+    connection.execute("SELECT a.job_id,a.customer,concat(ifnull(b.first_name,''),' ',ifnull(b.family_name,'')) customer_name,a.job_date FROM job a, customer b where a.completed=0 and a.customer=b.customer_id;")
     jobList = connection.fetchall()
     return render_template("currentjoblist.html", job_list = jobList)    
 
