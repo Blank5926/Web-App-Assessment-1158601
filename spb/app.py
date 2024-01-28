@@ -30,9 +30,35 @@ def home():
 @app.route("/currentjobs")
 def currentjobs():
     connection = getCursor()
+    # add customers' name combine togther, add customer table for query
     connection.execute("SELECT a.job_id,a.customer,concat(ifnull(b.first_name,''),' ',ifnull(b.family_name,'')) customer_name,a.job_date FROM job a, customer b where a.completed=0 and a.customer=b.customer_id;")
     jobList = connection.fetchall()
     return render_template("currentjoblist.html", job_list = jobList)    
+
+@app.route("/job/<int:job_id>")
+def job_detail(job_id):
+    connection = getCursor()
+    
+    # Fetch job details
+    connection.execute("SELECT * FROM job WHERE job_id = %s", (job_id,))
+    job = connection.fetchone()
+
+    # From job_part, job and part table query the part usage of this job
+    connection.execute("SELECT a.*, b.qty FROM part a JOIN job_part b ON a.part_id = b.part_id WHERE a.job_id = %s;", (job_id,))
+    parts = connection.fetchall()
+
+    # From job_service, service and job table query the service usage of this job
+    connection.execute("SELECT a.*, b.qty FROM service a JOIN job_service b ON a.service_id = b.service_id WHERE b.job_id = %s", (job_id,))
+    services = connection.fetchall()
+
+    # Fetch lists of all available services and parts for adding to the job
+    connection.execute("SELECT * FROM service")
+    all_services = connection.fetchall()
+    connection.execute("SELECT * FROM part")
+    all_parts = connection.fetchall()
+
+    return render_template("job_detail.html", job=job, services=services, parts=parts, all_services=all_services, all_parts=all_parts)
+
 
 if __name__ == '__main__':
     app.run()

@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+{% block content %}
+
+    <h1>Job</h1>
+    
+    <!-- Display job information -->
+    <h2>Job ID: {{ job.job_id }}</h2>
+    <p><strong>Date:</strong> {{ job.job_date }}</p>
+    <p><strong>Customer ID:</strong> {{ job.customer }}</p>
+    <p><strong>Status:</strong> {{ 'Completed' if job.completed else 'In Progress' }}</p>
+
+    <!-- List of services and parts already added to the job -->
+    <h3>Services Used</h3>
+    <ul>
+        {% for service in services %}
+            <li>{{ service.name }} - {{ service.quantity }}</li>
+        {% endfor %}
+    </ul>
+
+    <h3>Parts Used</h3>
+    <ul>
+        {% for part in parts %}
+            <li>{{ part.name }} - {{ part.quantity }}</li>
+        {% endfor %}
+    </ul>
+
+    <!-- Form to add a new service -->
+    <h3>Add Service</h3>
+    <form method="post" action="/add_service_to_job">
+        <label for="service">Service:</label>
+        <select name="service" id="service">
+            {% for service in all_services %}
+                <option value="{{ service.service_id }}">{{ service.name }}</option>
+            {% endfor %}
+        </select>
+        <label for="quantity">Quantity:</label>
+        <input type="number" name="quantity" id="quantity" min="1">
+        <input type="hidden" name="job_id" value="{{ job.job_id }}">
+        <button type="submit">Add Service</button>
+    </form>
+
+    <!-- Form to add a new part -->
+    <h3>Add Part</h3>
+    <form method="post" action="/add_part_to_job">
+        <label for="part">Part:</label>
+        <select name="part" id="part">
+            {% for part in all_parts %}
+                <option value="{{ part.part_id }}">{{ part.name }}</option>
+            {% endfor %}
+        </select>
+        <label for="quantity">Quantity:</label>
+        <input type="number" name="quantity" id="quantity" min="1">
+        <input type="hidden" name="job_id" value="{{ job.job_id }}">
+        <button type="submit">Add Part</button>
+    </form>
+
+    <!-- Button to mark the job as completed -->
+    {% if not job.completed %}
+        <form method="post" action="/complete_job/{{ job.job_id }}">
+            <button type="submit">Mark as Completed</button>
+        </form>
+    {% endif %}
+{% endblock %}
