@@ -14,33 +14,37 @@ app = Flask(__name__)
 dbconn = None
 connection = None
 
+
 def getCursor():
     global dbconn
     global connection
-    connection = mysql.connector.connect(user=connect.dbuser, \
-                                         password=connect.dbpass, host=connect.dbhost, \
+    connection = mysql.connector.connect(user=connect.dbuser,
+                                         password=connect.dbpass, host=connect.dbhost,
                                          database=connect.dbname, autocommit=True)
-    dbconn = connection.cursor()
-    return dbconn
+    return connection.cursor(dictionary=True)
+
 
 @app.route("/")
 def home():
     return redirect("/currentjobs")
+
 
 def generate_href(field_value):
     # Your logic to generate the href based on field_value
     # For example, let's say you want to link to Google search using the field value
     return f'/job/{field_value}'
 
+
 @app.route("/currentjobs")
 def currentjobs():
     connection = getCursor()
-    # add customers' name combine togther, add customer table for query
+    # add customers' name combine together, add customer table for query
     connection.execute("SELECT a.job_id,a.customer,concat(ifnull(b.first_name,''),' ',ifnull(b.family_name,'')) customer_name,a.job_date FROM job a, customer b where a.completed=0 and a.customer=b.customer_id;")
     jobList = connection.fetchall()
     return render_template("currentjoblist.html", job_list=jobList, generate_href=generate_href)
 
-@app.route("/job/<int:job_id>")
+
+@app.route("/job/<int:job_id>", methods=['GET'])
 def job_detail(job_id):
     connection = getCursor()
 
@@ -62,7 +66,63 @@ def job_detail(job_id):
     connection.execute("SELECT * FROM part")
     all_parts = connection.fetchall()
 
-    return render_template("job_detail.html", job=job, services=services, parts=parts, all_services=all_services, all_parts=all_parts)
+    part_costs = 0
+    service_costs = 0
+    for part in parts:
+        part_costs += (part['qty'] * part['cost'])
+    for service in services:
+        service_costs += (service['qty'] * service['cost'])
+
+    payload = (part_costs + service_costs, job_id)
+    connection.execute("UPDATE job SET total_cost = %s where job_id = %s", payload)
+
+    return render_template("job_detail.html",
+                           job=job,
+                           services=services,
+                           parts=parts,
+                           all_services=all_services,
+                           all_parts=all_parts)
+
+
+@app.route("/job/<int:job_id>/add_part", methods=['POST'])
+def add_part_to_job(job_id):
+    connection = getCursor()
+
+    part = request.form.get('part')
+    qty = request.form.get('part_quantity')
+    # Update database
+    print(f"Part ID: {part}, Quantity: {qty}, Job ID: {job_id}")
+    payload = (job_id, part, qty)
+    connection.execute("INSERT INTO job_part (job_id, part_id, qty) VALUES (%s, %s, %s)", payload)
+
+    return redirect(f"/job/{job_id}")
+
+
+@app.route("/job/<int:job_id>/add_service", methods=['POST'])
+def add_service_to_job(job_id):
+    connection = getCursor()
+
+    service = request.form.get('service')
+    qty = request.form.get('service_quantity')
+
+    # Update database
+    print(f"Service ID: {service}, Quantity: {qty}, Job ID: {job_id}")
+    payload = (job_id, service, qty)
+    connection.execute("INSERT INTO job_service (job_id, service_id, qty) VALUES (%s, %s, %s)", payload)
+
+    return redirect(f"/job/{job_id}")
+
+
+@app.route("/job/<int:job_id>/complete_job", methods=['POST'])
+def complete_job(job_id):
+    connection = getCursor()
+    # Update database
+    print(f"Completing Job ID: {job_id}")
+    payload = ("1", job_id)
+    connection.execute("UPDATE job SET completed = %s where job_id = %s", payload)
+
+    # Render the template with the form
+    return redirect(f"/job/{job_id}")
 
 
 @app.route("/admin")

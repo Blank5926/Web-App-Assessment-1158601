@@ -13,12 +13,12 @@
     </tr>
     {% for job in job_list %}
     <tr>
-        {% for field in job %}
-        {% if loop.index == 1 %}
-        <td class="text-primary text-decoration-underline" onclick="window.location.href='{{ generate_href(field) }}'"> {{field}} </td>
-        {% else %}
-        <td>{{field}}</td>
-        {% endif %}
+        {% for field in job.values() %}
+            {% if loop.index == 1 %}
+                <td class="text-primary text-decoration-underline" onclick="window.location.href='{{ generate_href(field) }}'"> {{field}} </td>
+            {% else %}
+                <td>{{field}}</td>
+            {% endif %}
         {% endfor %}
     </tr>
     {% endfor %}
