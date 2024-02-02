@@ -65,5 +65,10 @@ def job_detail(job_id):
     return render_template("job_detail.html", job=job, services=services, parts=parts, all_services=all_services, all_parts=all_parts)
 
 
+@app.route("/admin")
+def admin():
+    return render_template("admin.html")
+
+
 if __name__ == '__main__':
     app.run()
